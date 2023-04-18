@@ -22,8 +22,6 @@ class ShortestPath(Kernel):
 
     def initialize(self):
         """Initialize all transformer arguments, needing initialization."""
-        self._graph_format = "dictionary"
-
         if not self._initialized["with_labels"]:
             if self.with_labels:
                 self._lt = "vertex"
@@ -46,10 +44,8 @@ class ShortestPath(Kernel):
         check_is_fitted(self, ['X', '_nx', '_enum'])
 
         # Input validation and parsing
-        if X is None:
-            raise ValueError('transform input cannot be None')
-        else:
-            Y = self.parse_input(X)
+        Y = self.pre_calc_matrix(X)
+        
         # Transform - calculate kernel matrix
         try:
             check_is_fitted(self, ['_phi_X'])
@@ -66,7 +62,6 @@ class ShortestPath(Kernel):
             for j in Y[i].keys():
                 phi_y[i, j] = Y[i][j]
 
-        # store _phi_Y for independent (of normalization arg diagonal-calls)
         self._phi_Y = phi_y
         km = np.dot(phi_y[:, :len(self._enum)], phi_x.T)
         self._is_transformed = True
@@ -144,7 +139,7 @@ class ShortestPath(Kernel):
         else:
             return km
 
-    def parse_input(self, X):
+    def pre_calc_matrix(self, X):
         """Parse and create features for "shortest path" kernel.
         Parameters
         ----------
@@ -200,15 +195,6 @@ class ShortestPath(Kernel):
         elif self._method_calling == 3:
             self._ny = i+1
         return sp_counts
-
-
-def lhash(S, u, v, *args):
-    return S[u, v]
-
-
-def decompose_input(a):
-    return (a, [])
-
 
 def lhash_labels(S, u, v, *args):
     return (args[0][u], args[0][v], S[u, v])

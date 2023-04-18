@@ -24,8 +24,6 @@ class WeisfeilerLehman(Kernel):
         The number of iterations.
     """
 
-    _graph_format = "dictionary"
-
     def __init__(self,
                  normalize=False, n_iter=5, base_graph_kernel=VertexHistogram):
         """Initialise a `weisfeiler_lehman` kernel."""
@@ -34,7 +32,6 @@ class WeisfeilerLehman(Kernel):
         self.n_iter = n_iter
         self.base_graph_kernel = base_graph_kernel
         self._initialized.update({"n_iter": False, "base_graph_kernel": False})
-        # self._base_graph_kernel = None
 
     def initialize(self):
         """Initialize all transformer arguments, needing initialization."""
@@ -51,8 +48,8 @@ class WeisfeilerLehman(Kernel):
             self._n_iter = self.n_iter + 1
             self._initialized["n_iter"] = True
 
-    def parse_input(self, X):
-        """Parse input for weisfeiler lehman.
+    def pre_calc_matrix(self, X):
+        """Get_ready to compute matrix.
         Parameters
         ----------
         X : iterable of graphs
@@ -68,10 +65,7 @@ class WeisfeilerLehman(Kernel):
         nx = 0
         Gs_ed, L, distinct_values, extras = dict(), dict(), set(), dict()
         for (idx, x) in enumerate(iter(X)):
-            
-            #x.desired_format(self._graph_format)
             el = networkx.get_edge_attributes(x, 'labels')
-            #el = x.get_labels(purpose=self._graph_format, label_type="edge", return_none=True)
             if el is None:
                 extra = tuple()
             else:
@@ -144,9 +138,9 @@ class WeisfeilerLehman(Kernel):
                     new_graphs.append((Gs_ed[j], new_labels) + extras[j])
                 self._inv_labels[i] = WL_labels_inverse
                 yield new_graphs
-
+        
         base_graph_kernel = {i: self._base_graph_kernel(**self._params) for i in range(self._n_iter)}
-
+        import pdb; pdb.set_trace()
         if self._method_calling == 1:
             for (i, g) in tqdm(enumerate(generate_graphs(label_count, WL_labels_inverse))):
                 base_graph_kernel[i].fit(g)
@@ -177,7 +171,7 @@ class WeisfeilerLehman(Kernel):
         self._method_calling = 2
         self._is_transformed = False
         self.initialize()
-        km, self.X = self.parse_input(X)
+        km, self.X = self.pre_calc_matrix(X)
 
         self._X_diag = np.diagonal(km)
         if self.normalize:
@@ -270,7 +264,6 @@ class WeisfeilerLehman(Kernel):
                     new_graphs.append([Gs_ed[j], new_labels])
                 yield new_graphs
 
-        # Calculate the kernel matrix without parallelization
         graphs = generate_graphs(WL_labels_inverse, nl)
         values = [self.X[i].transform(g) for (i, g) in enumerate(graphs)]
         K = np.sum(values, axis=0)

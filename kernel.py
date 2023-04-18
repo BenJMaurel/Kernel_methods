@@ -23,13 +23,11 @@ import svm
 
 class Kernel(BaseEstimator, TransformerMixin):
     """A general class for graph kernels.
-    At default a kernel is considered as pairwise. 
-    Parameters
-    ----------
-    normalize : bool, optional
-        Normalize the output of the graph kernel.
-    Attributes
-    ----------
+    At default a kernel is considered as pairwise.
+
+    The aim of this general class is that it is possible to define a new kernel (in theory)
+    just by creating a new 'pre_calc_matrix' method.
+
     X : list of graphs
     _method_calling : int
         An inside enumeration defines which method calls another method.
@@ -39,7 +37,6 @@ class Kernel(BaseEstimator, TransformerMixin):
     """
 
     X = None
-    _graph_format = "dictionary"
     _method_calling = 0
 
     def __init__(self, normalize=False):
@@ -48,7 +45,7 @@ class Kernel(BaseEstimator, TransformerMixin):
         self._initialized = dict()
 
     def fit(self, X, y=None):
-        """Fit a dataset, for a transformer.
+        """Fit the dataset.
         Parameters
         ----------
         X : iterable
@@ -61,7 +58,7 @@ class Kernel(BaseEstimator, TransformerMixin):
 
         # Parameter initialization
         self.initialize()
-        self.X = self.parse_input(X)    
+        self.X = self.pre_calc_matrix(X)    
 
         # Return the transformer
         return self
@@ -82,10 +79,7 @@ class Kernel(BaseEstimator, TransformerMixin):
         check_is_fitted(self, ['X'])
 
         # Input validation and parsing
-        if X is None:
-            raise ValueError('`transform` input cannot be None')
-        else:
-            Y = self.parse_input(X)
+        Y = self.pre_calc_matrix(X)
 
         # Transform - calculate kernel matrix
         km = self._calculate_kernel_matrix(Y)
@@ -205,26 +199,3 @@ class Kernel(BaseEstimator, TransformerMixin):
 
         # Set parameters
         super(Kernel, self).set_params(**params)
-
-
-def indexes(n_jobs, nsamples):
-    """Distribute samples accross n_jobs."""
-    n_jobs = n_jobs
-
-    if n_jobs >= nsamples:
-        for i in range(nsamples):
-            yield (i, i+1)
-    else:
-        ns = nsamples/n_jobs
-        start = 0
-        for i in range(n_jobs-1):
-            end = start + ns
-            yield (int(start), int(end))
-            start = end
-        yield (int(start), nsamples)
-
-
-def assign(data, K, pairwise_operation):
-    """Assign list values of an iterable to a numpy array while calculating a pairwise operation."""
-    for d in data:
-        K[d[0][0], d[0][1]] = pairwise_operation(d[1][0], d[1][1])

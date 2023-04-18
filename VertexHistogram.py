@@ -9,7 +9,6 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 import networkx
 data_path = "data/"
-# Python 2/3 cross-compatibility import
 from six import iteritems
 from six import itervalues
 from six.moves.collections_abc import Iterable
@@ -36,8 +35,8 @@ class VertexHistogram(Kernel):
                 TypeError('sparse could be False, True or auto')
             self._initialized["sparse"] = True
 
-    def parse_input(self, X):
-        """Parse and check the given input for VH kernel.
+    def pre_calc_matrix(self, X):
+        """Get ready for computing kernel matrix (_calculate_matrix).
         Parameters
         ----------
         X : iterable of graphs
